@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Sign up with ecoBytes</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <link rel="stylesheet" href="style.css"/>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  </head>
+  <body>
+
+    <nav>
+      <div style="font-size: 25px; padding: 0 20px" class="teal lighten-5 nav-wrapper">
+        <div class="brand-logo">
+          <span class="eco">eco</span><span class="Bytes">Bytes</span>
+        </div>
+      </div>
+    </nav>
+    
+    <main class="login-signup-main" class="center-align">
+    <div class="login-signup-container">
+      <div id="info-text">
+        <p>Before you start posting dishes, tell us about your restaurant</p>
+      </div>
+
+      <div class="restaurant-info-form-container">
+        <form action="javascript:listRestaurant()">
+          <input id="input-name" class="login-signup-form restaurant-info-form one" type="text" placeholder="Name" name="name" required>
+          <input id="input-street" class="login-signup-form restaurant-info-form one" type="text" placeholder="Street" name="street" required>
+          <div style="display: flex">
+            <input id="input-city" class="login-signup-form restaurant-info-form two" type="text" placeholder="City/Town" name="city-town" required>
+            <input id="input-contact" class="login-signup-form restaurant-info-form two" type="tel" placeholder="Contact" name="contact" required>
+          </div>
+          <input id="input-cuisine" class="login-signup-form restaurant-info-form one" type="text" placeholder="Cuisine" name="cusine" required>
+
+          <input style="border: 1px solid #ccc" id="time" type="text" placeholder="Closing Time" class="timepicker center-align login-signup-form restaurant-info-form one" required></br>
+          
+
+          
+          <div style="display: flex; margin: 0;" class="file-field input-field">
+            <div class="btn">
+              <span>Choose</span>
+              <input id="input-image" type="file" accept="image/*" name="image" required> 
+            </div>
+            <div class="file-path-wrapper">
+              <input class="file-path validate" type="text">
+            </div>
+          </div>
+          <label for="image" id="image-placeholder">Upload logo or photo of the restaurant</label></br></br>
+          <input id="submit" type="submit" value="List Restaurant" class="waves-effect waves-light btn-large accTypeBtn center-align animate" required/>
+      </form>
+      </div>
+      
+    </div>
+    </main>
+
+    <script src="https://www.gstatic.com/firebasejs/4.10.1/firebase.js"></script>
+    <script src="script.js"></script>
+    <script type="module">
+      let timepicker;
+      let instance; 
+      document.addEventListener('DOMContentLoaded', function() {
+        timepicker = 
+          document.querySelector('.timepicker');
+        instance = M.Timepicker.init(timepicker);
+      });
+
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+      import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+
+      
+      let uid = '';
+      const auth = getAuth(initializeApp(firebaseConfig));
+      onAuthStateChanged(auth, (user) => {
+      	if (user) {
+      	  // User is signed in
+      	  uid = user.uid;
+      	  console.log(user.uid);
+      	} else {
+        	// User is signed out
+        	console.log("not signed in");
+          location.href= "restaurantSignUp-Login.html";
+      	}
+      });
+
+      timepicker.addEventListener("click", 
+          function() {
+            console.log("time");
+            openTimepicker();
+          });
+      
+      function openTimepicker() {
+        instance.open();
+      }
+      
+      function listRestaurant() {
+        let name = document.querySelector("#input-name").value;
+        let street = document.querySelector("#input-street").value;
+        let city = document.querySelector("#input-city").value;
+        let contact = document.querySelector("#input-contact").value;
+        let cuisine = document.querySelector("#input-cuisine").value;
+        let image = document.querySelector("#input-image").files[0];
+        
+        console.log(name);
+        console.log(street);
+        console.log(city);
+        console.log(contact);
+        console.log(cuisine);
+        console.log(timepicker.value);
+        console.log(image.name);
+
+        var storage = firebase.storage();
+        var storageRef = storage.ref();
+        let dishRef = storageRef.child('restaurants/' + uid);
+        var uploadTask = dishRef.child('logo').put(image);
+        
+        uploadTask.on('state_changed', 
+          (snapshot) => {
+            var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            console.log('Upload is ' + progress + '% done');
+            switch (snapshot.state) {
+              case firebase.storage.TaskState.PAUSED:
+                console.log('Upload is paused');
+                break;
+              case firebase.storage.TaskState.RUNNING:
+                console.log('Upload is running');
+                break;
+            }
+          }, 
+          (error) => {
+            // Handle unsuccessful uploads
+            console.log(error);
+            // let user know upload was unsuccessful?
+          }, 
+          () => {
+            // Handle successful uploads on complete
+            uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+              console.log('File available at', downloadURL);
+
+              // replace restaurant1 with uid when auth is done
+              firebase.database().ref('restaurant_info/' + uid).set({
+                name: name,
+                address: street,
+                city: city,
+                contact: contact,
+                cuisine: cuisine,
+                closing_time: timepicker.value,
+                dish_count: 0,
+                dish_running_count: 0,
+                logo: downloadURL
+              }, (error) => {
+                if (error) {
+                  // The write failed...
+                  console.log(error);
+                } else {
+                  // Data saved successfully!
+                location.href = 'restaurantHomepage.html';
+                }
+              });
+            });
+          }
+        );
+      }
+      
+    </script>
+  </body>
+</html>

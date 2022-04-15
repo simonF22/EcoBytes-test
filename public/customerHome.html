@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>ecoBytes - View Restaurants</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <link rel="stylesheet" href="style.css"/>
+    <script src="https://www.gstatic.com/firebasejs/4.10.1/firebase.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  </head>
+  
+  <body class="teal lighten-2">
+    <nav>
+      <div style="font-size: 25px; padding: 0 20px" class="teal lighten-4 nav-wrapper">
+        <div class="brand-logo">
+          <a href="index.html"><span class="eco">eco</span><span class="Bytes">Bytes</span></a>
+        </div>
+      </div>     
+    </nav>
+
+    <main>
+      <a href="restaurantLogin.html" class="waves-effect waves-light btn link-to-rest-btn grey lighten-3"><i class="material-icons right">call_made</i>Restaurant sign-in </a>
+
+  
+      <div id="restaurantList" class="restaurantList-row">
+      </div>
+    </main>
+
+    <script src="script.js"> </script>
+    <script>  
+      //Initialize Materialize components here
+      document.addEventListener('DOMContentLoaded', function() {
+        var elems = document.querySelectorAll('select');
+        var instances = M.FormSelect.init(elems);
+      });
+
+      function toggleFilterDisplay() {
+        let x = document.getElementById('filter-container');
+        
+        if (x.style.display === "block") {
+          x.style.display = "none";
+          // console.log("block to none");
+        } else {
+          x.style.display = "block";
+          // console.log("none to block");
+        }
+      }
+
+      function getFilter() {
+        var locs = document.getElementById('select-location');
+        var selectLocs = M.FormSelect.getInstance(locs);
+
+        console.log(selectLocs.getSelectedValues());
+      } 
+    </script>
+  </body>
+</html>

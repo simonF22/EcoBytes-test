@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>ecoBytes</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <link rel="stylesheet" href="style.css"/>
+    <script src="https://www.gstatic.com/firebasejs/4.10.1/firebase.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  </head>
+  
+  <body style="background-color:#eceff1">
+    <nav>
+      <div style="font-size: 25px; padding: 0 20px;" class="teal lighten-3 nav-wrapper">
+        <div id="restName" class="brand-logo">
+          <!-- Restaurant name goes here -->
+        </div>
+      </div>
+    </nav> 
+    
+    <main>
+      <div class="restaurant">
+        <div class="restaurant-info-card">
+        <!-- restaurant info goes here -->
+        </div>    
+      </div>
+
+      <hr class="dotted-hr">
+
+      <div class="available-foods"> 
+        <div class="sticky">
+          <h4 class="center-align"><i class="small material-icons">local_dining</i> Food Available</h4>
+        </div>
+        <div id="dishes" class="dishes">
+        <!-- Dish cards go here -->
+        </div> 
+      </div>
+    </main>
+    
+    <script>
+    const server = "https://ecobytes-64eb4-default-rtdb.firebaseio.com";
+      
+    async function sendRequest(url, method, data){
+      const options = {method};
+      if(data){
+        options.body = JSON.stringify(data);
+        options.headers = {'Content-Type':'application/json'};
+      }
+      let response = await fetch(url, options);
+      return response.json();
+    }
+
+    function convertObject(obj){
+      let arr = [];
+      if(obj === 'null'){
+        return arr;
+      }
+      obj = JSON.parse(JSON.stringify(obj));
+      for(let [key, val] of Object.entries(obj)){
+        val.id = key;
+        arr.push(val);
+      }
+      return arr;
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const restid = urlParams.get('restid');
+      
+    async function getRestaurantInfo(){
+      let restaurant = await sendRequest(`${server}/restaurant_info/${restid}.json`, 'GET');
+      restaurant = convertObject(restaurant);
+      displayRestaurantInfo(restaurant);
+    }
+
+    function displayRestaurantInfo(restaurant){
+      var result = document.querySelector('#restName'); 
+      result.innerHTML = '';
+      var html = '';
+      html += `<span>${restaurant[8]}</span>`;
+      result.innerHTML = html;
+
+      var result = document.querySelector('.restaurant-info-card'); 
+      result.innerHTML = '';
+      var html = '';
+      html += `
+          <div class="card-image restaurant-info-img">
+            <img src="${restaurant[7]}" style="border-radius:30%">
+          </div>
+          <div class="card-content restaurant-info-card-content right">
+            <p><i class="tiny material-icons">local_dining</i>&nbsp Cuisine: <b>${restaurant[4]}</b></p>
+            <p><i class="tiny material-icons">pin_drop</i>&nbsp Address: <b>${restaurant[0]}, ${restaurant[1]}</b></p>
+            <p><i class="tiny material-icons">access_time</i>&nbsp Closing Time: <b>${restaurant[2]}</b></p>
+            <p><i class="tiny material-icons">local_phone</i>&nbsp Phone: <b>${restaurant[3]}</b></p>
+          </div> `;
+      result.innerHTML = html;
+    }  
+      
+    async function clickedRestaurant(id){   
+      let dishes = await sendRequest(`https://ecobytes-64eb4-default-rtdb.firebaseio.com/dish_info/${restid}.json`, 'GET');
+      let result = convertObject(dishes);
+      displayDishes(result);
+      }
+      
+    function displayDishes(dishes){
+      let info = document.querySelector('#dishes'); 
+      info.innerHTML = '';
+      
+      let html = '';
+        for(let dish of dishes){
+          html += `
+          <div class="card restaurant-dish-card">
+            <div class="card-image restaurant-dish-img">
+              <img src="${dish.image}" style="border-radius:20px">
+            </div>
+            <div class="card-content restaurant-dish-card-content">
+              <p><i class="tiny material-icons">restaurant</i>&nbsp ${dish.name}</p>
+              <p><i class="tiny material-icons">attach_money</i>&nbsp ${dish.cost}</p>
+              <p><i class="tiny material-icons">room_service</i>&nbsp ${dish.servings} servings left</p>
+            </div>
+          </div>
+          `;
+        } 
+      info.innerHTML = html;
+    }
+          
+    window.addEventListener('DOMContentLoaded',getRestaurantInfo() );
+    document.querySelector('#dishes').addEventListener('load', clickedRestaurant() ); 
+    
+    </script>
+    <script>
+      //Initialize Materialize components here
+      document.addEventListener('DOMContentLoaded', function() {
+      var elems = document.querySelectorAll('.modal');
+      var instances = M.Modal.init(elems);
+      });
+    </script>
+  </body>
+</html>

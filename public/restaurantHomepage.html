@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Restaurant</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <link rel="stylesheet" href="style.css"/>
+    <script src="https://www.gstatic.com/firebasejs/4.10.1/firebase.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  </head>
+
+  <body style="background-color:#eceff1">
+    <nav>
+      <div style="font-size: 25px; padding: 0 20px" class="teal lighten-4 nav-wrapper">
+        <div class="brand-logo">
+          <span class="eco">eco</span><span class="Bytes">Bytes</span>
+        </div>
+      </div>
+    </nav>
+    </br>
+    <header id="homepage-header">
+      <h1 id="homepage-title"></h1>
+      <img src="#" id="homepage-img">
+    </header>
+    <section id="btns-add-logout">
+      <a class="waves-effect waves-light btn modal-trigger" id="add-listing" href="#modal1">
+        <i class="material-icons right material-icons-white">add</i>
+        Add Listing
+      </a>
+      <button id="LogOutBtn" class="waves-effect waves-light btn blue-grey lighten-4 animate" style="color: black" type="button" name="LogOutBtn">LOG OUT</button>
+    </section>
+    
+    <main id="homepage-main">
+      <div class="display-dishes-div">
+      Loading...</div>
+    </main>
+    
+    <div id="modal1" class="modal">
+      <div class="modal-content">
+        <h4>Add Listing</h4> 
+        <form>
+          <div style="width: 70%; margin: auto">
+            <input style="border: 1px solid #ccc" id="add-name" class="center-align" type="text" placeholder="Name of Dish" name="dish" required>
+            <input style="border: 1px solid #ccc" id="add-cost" class="center-align" type="text" placeholder="Cost" name="cost" required>
+            <input style="border: 1px solid #ccc; opacity: 1;" id="add-servings" class="center-align" type="number" min="1" max="100" placeholder="Servings Left" name="servings" required>
+
+            <div style="display: flex; margin: 0;" class="file-field input-field">
+              <div class="btn">
+                <span>Choose</span>
+                <input id="listing-upload" type="file" accept="image/*" name="image" required> <!-- should all image file types be accepted? -->
+              </div>
+              <div class="file-path-wrapper">
+                <input id="file-name" class="file-path validate" type="text">
+              </div>
+            </div>
+            <label id="add-image-label" for="image">Upload image of dish</label>
+          </div>
+          <div style="display: flex; justify-content: space-evenly" class="modal-footer">
+            <input style="color: white" id="submit" value="Add" type="submit" class="waves-effect waves-green btn-flat" required/>
+            <a class="modal-close waves-effect waves-green btn-flat">Close</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="modal2" class="modal">
+      <div class="modal-content">
+        <form>
+          <div style="width: 70%; margin: auto">
+            <div style="display: relative; margin: auto; width: 100%; height: 200px; padding-bottom: 15px">
+              <img id="modify-image" style="width: 100%; height: 100%; object-fit: cover" src="#">
+            </div>
+            <input style="border: 1px solid #ccc" class="center-align" id="modify-name" type="text" placeholder="Name" name="name" required>
+            <input style="border: 1px solid #ccc" class="center-align" id="modify-cost" type="text" placeholder="Cost" name="cost" required>
+            <input style="border: 1px solid #ccc" id="modify-servings" class="center-align" type="number" min="1" max="100" placeholder="Servings Left" name="servings" required>
+          </div>
+  
+          <div style="display: flex; justify-content: space-evenly" class="modal-footer">
+            <input style="color: white" id="update" value="Update" type="submit" class="waves-effect waves-green btn-flat" required/>
+            <input style="color: white" id="remove" value="Remove" type="submit" class="modal-close waves-effect waves-green btn-flat">
+          </div>
+        </form>
+      </div>
+    </div>
+    
+
+    <script src="script.js"></script>
+    <script type="module">
+      //Initialize Materialize components here
+      document.addEventListener('DOMContentLoaded', function() {  
+        var modals = document.querySelectorAll('.modal');
+        var instances = M.Modal.init(modals);
+      });
+
+      document.getElementById("submit").addEventListener("click", function(event){
+        event.preventDefault()
+      });
+
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+      import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js";
+      
+      let dishesArray = [];
+      let uid = '';
+
+      // get user data
+      // if user exists, display restaurant info and dish info
+      // else, redirect to signup/login
+      const auth = getAuth(initializeApp(firebaseConfig));
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          // User is signed in
+          uid = user.uid;
+          console.log(user.uid);
+
+          let cost = 0;
+          let servings = 0;
+
+          let restaurantRef = firebase.database().ref('restaurant_info/' + uid);
+          // display restaurant info - name and image
+          restaurantRef.once('value', (snapshot) => {
+            if (snapshot.exists()) {
+              let restaurantName = document.querySelector("#homepage-title");
+              let restaurantImage = document.querySelector("#homepage-img");
+              
+              const data = snapshot.val();
+              restaurantName.innerHTML = data.name;
+              restaurantImage.src = data.logo;
+  
+              document.title = data.name;
+
+              // display dish info
+              let dishRef = firebase.database().ref('dish_info/' + uid);
+              dishRef.once('value', (snapshot) => {
+                // store in array once read and refer to that instead of making constant calls to db
+                snapshot.forEach((childSnapshot) => {
+                  var childData = childSnapshot.val();
+                  console.log(childData);
+                  
+                  let newEntry = {"name" : childData.name, "image" : childData.image, "cost" : childData.cost, "servings" : childData.servings, "dishID" : childData.dishID};
+                  dishesArray.push(newEntry);
+                  console.log(dishesArray);
+                });
+    
+                drawDishCards();
+              });
+            } else {
+              location.href = "restaurantInfo.html";
+            }
+          });
+        } else {
+          // User is signed out
+          console.log("not signed in");
+          location.href= "restaurantSignUp-Login.html";
+        }
+      });
+
+
+      // display dishes to screen by writing to DOM
+      function drawDishCards() {
+        let result = document.querySelector('.display-dishes-div');
+        let html = '';
+        let key = 0;
+        
+        for (let dish of dishesArray) {
+          html += 
+            `<a id="${key}" href="#modal2" class="card dish-listing teal lighten-4 modal-trigger">
+              <div class="card-image">
+                <img src="${dish.image}" class="dish-image">
+              </div>
+              <div class="dish-info-card-content card-content">
+                <p class="dish-name dish-info">${dish.name}</p>
+                <p class="dish-info"><i class="tiny material-icons">attach_money</i>&nbsp ${dish.cost}</p>
+                <p class="dish-info"><i class="tiny material-icons">room_service</i>&nbsp ${dish.servings} servings left</p>
+              </div>
+            </a>`;
+          
+          key++;
+        }
+        
+        if (html == '') {
+          html = 'No dishes added yet.';
+        }
+        
+        result.innerHTML = html;
+            
+        let tests = document.querySelectorAll('.dish-listing');
+        for (let test of tests) {
+          console.log(test.id);
+          test.addEventListener("click", 
+            function() {
+              modifyDishModal(test.id);
+            });
+        }
+      }
+
+
+      
+      let update =
+          document.querySelector("#update");
+      let remove =
+          document.querySelector("#remove");
+
+      // sets values of fields in modify dish modal
+      // event listeners for "update" and "delete" button in said modal
+      function modifyDishModal(id) { 
+        console.log(id);
+        let modifyImage = 
+          document.querySelector("#modify-image").src = dishesArray[id].image;
+        let modifyName = 
+          document.querySelector("#modify-name").value = dishesArray[id].name;
+        let modifyCost = 
+          document.querySelector("#modify-cost").value = dishesArray[id].cost;
+        let modifyServings =
+          document.querySelector("#modify-servings").value = dishesArray[id].servings;
+
+        update.addEventListener("click", 
+          function() {
+            updateDish(id);
+          });
+        remove.addEventListener("click", 
+          function() {
+            removeDish(id);
+          });
+        
+        console.log(dishesArray[id].name);
+      }
+
+      // update dish info (not image) in firebase
+      function updateDish(id) {
+        let modifyName = 
+          document.querySelector("#modify-name").value;
+        let modifyCost = 
+          document.querySelector("#modify-cost").value;
+        let modifyServings =
+          document.querySelector("#modify-servings").value;
+
+        console.log(name);
+        console.log(dishesArray[id].dishID);
+        
+        // write updated list to DOM
+        
+        let dishRef = firebase.database().ref('dish_info/' + uid + '/' + dishesArray[id].dishID);
+
+        dishRef.child("name").set(modifyName);
+        dishRef.child("cost").set(modifyCost);
+        dishRef.child("servings").set(modifyServings);
+      }
+
+      document.querySelector("#submit").addEventListener("click", addDish);
+      
+      function addDish() {
+        let addName = document.querySelector("#add-name").value;
+        let addCost = document.querySelector("#add-cost").value;
+        let addServings = document.querySelector("#add-servings").value;
+        let addImage = document.querySelector("#listing-upload").files[0];
+        
+        let storage = firebase.storage();
+        let storageRef = storage.ref();
+        let dishCountRef = firebase.database().ref('restaurant_info/' + uid);
+        let dishCount = 0;
+        let dishRunningCount = 0;
+        
+        // send image to storage first
+        dishCountRef.once('value', (snapshot) => {
+          const data = snapshot.val();
+          dishCount = data.dish_count;
+          dishRunningCount = data.dish_running_count;
+          console.log(dishCount, dishRunningCount); 
+
+          let resDishID = "dish" + String(dishRunningCount).padStart(4, '0');
+          console.log(resDishID);
+          console.log(String(dishRunningCount).padStart(4, '0'));
+          
+          let dishRef = storageRef.child('dishes/' + uid);
+          let uploadTask = dishRef.child(resDishID).put(addImage);
+          
+          uploadTask.on('state_changed', 
+            (snapshot) => {
+              var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              console.log('Upload is ' + progress + '% done');
+              switch (snapshot.state) {
+                case firebase.storage.TaskState.PAUSED:
+                  console.log('Upload is paused');
+                  break;
+                case firebase.storage.TaskState.RUNNING:
+                  console.log('Upload is running');
+                  break;
+              }
+            }, 
+            (error) => {
+              // Handle unsuccessful uploads
+              console.log(error);
+              // let user know upload was unsuccessful?
+            }, 
+            () => {
+              // Handle successful uploads on complete (of image sent to storage)
+              uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                console.log('File available at', downloadURL);
+  
+                dishRunningCount++;
+                dishCount++;
+
+                let newEntry = {"name" : addName, "image" : downloadURL, "cost" : addCost, "servings" : addServings, "dishID" : resDishID};
+                dishesArray.push(newEntry);
+                console.log(dishesArray);
+
+                // save dish data to rtdb
+                firebase.database().ref('dish_info/' + uid + '/' + resDishID).set({
+                  name: addName,
+                  cost: addCost,
+                  servings: addServings,
+                  image: downloadURL,
+                  dishID: resDishID
+                }, (error) => {
+                  if (error) { // The write failed...
+                    console.log(error);
+                  } else {
+                    // update counts
+                    console.log(dishCount);
+                    dishCountRef.child('dish_count').set(dishCount);
+                    console.log(dishRunningCount);
+                    dishCountRef.child('dish_running_count').set(dishRunningCount);
+                    
+                    // write updated list to DOM
+                    drawDishCards();
+                    
+                    // clear input fields 
+                    document.querySelector("#add-name").value = '';
+                    document.querySelector("#add-cost").value = '';
+                    document.querySelector("#add-servings").value = '';
+                    document.querySelector("#listing-upload").value = '';
+                    document.querySelector("#file-name").value = '';
+                  }
+                });
+              });
+            }
+          );
+        });
+      }
+
+      function removeDish(id) {
+        console.log(dishesArray[id].dishID);
+        // remove dish from rtdb
+        firebase.database().ref('dish_info/' + uid + "/" + dishesArray[id].dishID).remove();
+        // remove dish image from storage
+        firebase.storage().ref("dishes/" + uid + "/" + dishesArray[id].dishID).delete();
+        // remove object from array
+        dishesArray = dishesArray.filter(function (dish) {
+        	console.log(dish.dishID, dishesArray[id].dishID);
+          return dish.dishID != dishesArray[id].dishID;
+        });
+        console.log(dishesArray);
+        // remove listing from DOM
+        drawDishCards();
+        
+        // decrement dish_count
+        let dishCountRef = firebase.database().ref('restaurant_info/' + uid);
+        let dishCount = 0;
+        dishCountRef.once('value', (snapshot) => {
+          const data = snapshot.val();
+          dishCount = data.dish_count;
+          console.log(dishCount);
+          dishCount--;
+          dishCountRef.child("dish_count").set(dishCount);
+        });
+      }
+
+      LogOutBtn.addEventListener('click', (e) => {
+        signOut(auth).then(() => {
+        location.href = "restaurantSignUp-Login.html";
+        // Sign-out successful.
+        }).catch((error) => {
+        // An error happened.
+        });
+      });
+    </script>
+    
+  </body>
+</html>

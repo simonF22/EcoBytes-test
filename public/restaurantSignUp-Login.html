@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>Sign Up | Login</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <link rel="stylesheet" href="style.css"/>
+    <script src="https://www.gstatic.com/firebasejs/4.10.1/firebase.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+  </head>
+  <body>
+    <main class="center-align index-main">
+      <h1>
+        <a href="index.html"><span class="eco">eco</span><span class="Bytes">Bytes</span></a>
+      </h1>
+      
+      <div class="accTypeBtns center-align">
+        <p>What would you like to do?</p>
+        <a href="restaurantAccountCreation.html" class="waves-effect waves-light btn-large accTypeBtn animate">List Restaurant</a>
+        <a href="restaurantLogin.html" class="waves-effect waves-light btn-large accTypeBtn animate">Login to the App</a>
+      </div>
+    </main>
+
+    <script>
+      //Initialize Materialize components here
+      document.addEventListener('DOMContentLoaded', function() {
+
+        const navs = M.Sidenav.init(document.querySelectorAll('.sidenav'));
+
+      });
+    </script>
+    <script type="module" src="script.js"></script>
+  </body>
+</html>
